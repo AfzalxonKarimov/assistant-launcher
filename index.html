@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Assistant</title>
+<style>
+  :root { --bg:#0b1210; --text:#e6f2ec; --hint:#7f9a8e; --accent:#34d399; color-scheme: dark; }
+  @media (prefers-color-scheme: light) { :root { --bg:#f2f6f3; --text:#10201a; --hint:#6b8278; --accent:#0e9f6e; color-scheme: light; } }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--text);
+    font:15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .wrap { height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:24px; box-sizing:border-box; text-align:center; }
+  .ring { width:34px; height:34px; border-radius:50%; border:3px solid color-mix(in srgb, var(--accent) 25%, transparent); border-top-color:var(--accent); animation:spin .8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .hint { color:var(--hint); font-size:13px; }
+  button { font:inherit; color:#062a1d; background:var(--accent); border:0; border-radius:12px; padding:10px 18px; font-weight:600; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <div class="ring"></div>
+  <div class="hint">Opening your assistant…</div>
+</div>
+<script>
+// Fixed launcher: the real app lives on a temporary tunnel address that changes on restart.
+// The bot keeps url.txt in this repo up to date; we read it and jump there, keeping the
+// Telegram launch data (in the #hash) so the app can still check it's you.
+(async function () {
+  const tg = window.Telegram && window.Telegram.WebApp;
+  const sources = [
+    "https://api.github.com/repos/AfzalxonKarimov/assistant-launcher/contents/url.txt?ref=main&t=" + Date.now(),
+    "url.txt?t=" + Date.now(),
+  ];
+  for (const src of sources) {
+    try {
+      const res = await fetch(src, src.startsWith("https://api.github.com")
+        ? { headers: { Accept: "application/vnd.github.raw" }, cache: "no-store" }
+        : { cache: "no-store" });
+      if (!res.ok) continue;
+      const url = (await res.text()).trim();
+      if (/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(url)) {
+        location.replace(url + "/" + location.search + location.hash);
+        return;
+      }
+    } catch (e) {}
+  }
+  document.getElementById("wrap").innerHTML =
+    '<div style="font-size:40px">📡</div><b>Can\'t find your app right now</b>' +
+    '<div class="hint">Your phone may be offline or restarting. Try again in a minute.</div>' +
+    '<button onclick="location.reload()">Try again</button>';
+})();
+</script>
+</body>
+</html>
